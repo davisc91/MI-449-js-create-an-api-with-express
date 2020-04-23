@@ -8,7 +8,7 @@ var port = process.env.PORT || 8080
 
 app.get('/', function (request, response) {
   response.json({
-    welcome: 'welcome to my API!'
+    welcome: 'welcome to my todo API!'
   })
 })
 
@@ -18,7 +18,9 @@ app.get('/todos', function (request, response) {
 
 app.get('/todos/:id', function (request, response) {
   if (!todos[request.params.id]) {
-    response.status(404).end('sorry, no such todo: ' + request.params.id)
+    response.status(404).json({
+      error: 'this todo does not exist: ' + request.params.id
+    })
     return
   }
   response.json(todos[request.params.id])
@@ -35,32 +37,37 @@ app.post('/todos', function (request, response) {
 })
 
 app.delete('/todos/:id', function (request, response) {
+  if (!todos[request.params.id]) {
+    response.status(404).json({
+      error: 'this todo does not exist: ' + request.params.id
+    })
+    return
+  }
   delete todos[request.params.id]
   response.redirect('/todos')
 })
 
 app.put('/todos/:id', function (request, response) {
   var todo = todos[request.params.id]
-  if (request.body.description !== undefined) {
-    todo.description = request.body.description.trim()
+  if (!todo) {
+    response.status(404).json({
+      error: 'this todo does not exist: ' + request.params.id
+    })
+  } else {
+    if (request.body.description !== undefined) {
+      todo.description = request.body.description.trim()
+    }
+    if (request.body.completed !== undefined) {
+      todo.completed = request.body.completed.trim()
+    }
+    response.redirect('/todos/' + request.params.id)
   }
-  if (request.body.completed !== undefined) {
-    todo.completed = request.body.completed.trim()
-  }
-  response.redirect('/todos/' + request.params.id)
 })
 
 app.use(function (request, response, next) {
-  response.status(404).end(request.url + ' not found')
+  response.status(404).json({
+    error: 'this file does not exist: ' + request.url
+  })
 })
-
-/* app.get('/todos/:id', function (request, response) {
-  if (!todos[request.params.id]) {
-    response.status(404).end('sorry, no such todo: ' + request.params.id)
-    return
-  }
-  response.json(todos[request.params.id])
-})
-*/
 
 app.listen(port)
